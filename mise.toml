@@ -35,6 +35,14 @@ description = "Run fast tests with coverage report for all packages (fails under
 run = "uv sync --upgrade"
 description = "Sync and upgrade packages"
 
-[tasks.sqllint]
+[tasks.sql-lint]
 run = "sqruff fix supabase --dialect postgres"
 description = "Fix linting for SQL"
+
+[tasks.db-up]
+run = "supabase start"
+description = "Start Supabase local instance"
+
+[tasks.db-down]
+run = "supabase stop --no-backup"
+description = "Stop Supabase local instance"
