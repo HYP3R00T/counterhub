@@ -4,7 +4,7 @@ Instructions for coding agents working in this repository.
 
 ## Project overview
 
-- Repo: `HYP3R00T/devcontainer-python-template` — a minimal, reusable Python devcontainer template.
+- Repo: `HYP3R00T/counterhub` — a minimal, reusable Python devcontainer template.
 - Stack: Python >= 3.13, `uv`, `ruff`, `ty`, `pytest`, `zensical`.
 
 ## Environment setup

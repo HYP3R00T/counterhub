@@ -1,7 +1,7 @@
 <div align="center">
-<h1>devcontainer-python-template</h1>
+<h1>counterhub</h1>
 <p>
-	<a href="https://hyp3r00t.github.io/devcontainer-python-template/">
+	<a href="https://hyp3r00t.github.io/counterhub/">
 		<img alt="Docs" src="https://img.shields.io/badge/docs-online-0A66C2?style=for-the-badge" />
 	</a>
 	<a href="https://github.com/sponsors/HYP3R00T">
@@ -35,10 +35,10 @@ Prerequisites: Docker + VS Code with the Dev Containers extension.
 
 ```bash
 # Clone the template
-git clone https://github.com/HYP3R00T/devcontainer-python-template.git
+git clone https://github.com/HYP3R00T/counterhub.git
 
 # Enter the project folder
-cd devcontainer-python-template
+cd counterhub
 
 # Open in VS Code
 code .
