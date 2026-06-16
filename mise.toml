@@ -4,6 +4,7 @@ prek = "latest"
 python = "3.13"
 ruff = "latest"
 shellcheck = "latest"
+supabase = "latest"
 ty = "latest"
 uv = "latest"
 
