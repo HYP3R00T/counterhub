@@ -1,0 +1,35 @@
+[tools]
+gitleaks = "latest"
+prek = "latest"
+python = "3.13"
+ruff = "latest"
+shellcheck = "latest"
+ty = "latest"
+uv = "latest"
+
+[settings]
+experimental = true
+idiomatic_version_file_enable_tools = ["python"]
+
+[hooks]
+enter = "bash ./scripts/enter_project.sh"
+
+[env]
+_.file = '.env'         # for sensitive data
+_.python.venv = ".venv"
+UV_LINK_MODE = "copy"
+
+[shell_alias]
+pya = "source ./.venv/bin/activate"
+
+[tasks.docs]
+run = "uvx zensical serve"
+description = "Serve the documentation locally"
+
+[tasks.test]
+run = "pytest --cov-report=term-missing --cov-fail-under=80"
+description = "Run fast tests with coverage report for all packages (fails under 80%)"
+
+[tasks.sync]
+run = "uv sync --upgrade"
+description = "Sync and upgrade packages"
