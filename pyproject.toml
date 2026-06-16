@@ -1,7 +1,7 @@
 [project]
 name = "counterhub"
 version = "0.1.0"
-description = "Add your description here"
+description = "A simple event tracking service that collects, stores, and exposes usage metrics for scripts, websites, and personal projects."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = ["fastapi[standard]>=0.137.1"]
