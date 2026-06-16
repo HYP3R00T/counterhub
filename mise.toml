@@ -34,3 +34,7 @@ description = "Run fast tests with coverage report for all packages (fails under
 [tasks.sync]
 run = "uv sync --upgrade"
 description = "Sync and upgrade packages"
+
+[tasks.sqllint]
+run = "sqruff fix supabase --dialect postgres"
+description = "Fix linting for SQL"
