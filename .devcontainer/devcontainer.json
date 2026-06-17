@@ -19,6 +19,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "astral-sh.ty",
         "charliermarsh.ruff",
         "christian-kohler.path-intellisense",
         "EditorConfig.EditorConfig",
