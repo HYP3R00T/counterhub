@@ -10,4 +10,5 @@ major_version = 17
 site_url = "http://localhost:3000"
 
 [db.seed]
-enabled = false
+enabled = true
+sql_paths = ["./seed.sql"]
