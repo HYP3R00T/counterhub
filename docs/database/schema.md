@@ -4,28 +4,66 @@ icon: lucide/database
 
 # Database Schema
 
-This document explains the current CounterHub database design, why it looks the way it does, and how to read the initial migration.
+This document explains the current CounterHub database design, why it looks the way it does, and how to read the migrations.
 
 If you want the exact source of truth, read:
 
 - `supabase/migrations/20260621205825_initial_counter_daily_schema.sql`
 - `supabase/migrations/20260621214918_register_dotfiles_counter.sql`
 
-This page is the human explanation of that file.
+This page is the human explanation of those files.
 
-## Why We Chose This Shape
+## Objective
 
-CounterHub is intentionally simple, but we still want basic history and basic protection.
+CounterHub is intentionally small.
 
-We do not want to store one raw row for every single hit forever.
-But we do want to answer questions like:
+The goal is:
 
-- how many times was `dotfiles` used in January?
-- what was the increase in February?
-- can we draw a simple graph over time?
-- can unknown callers create arbitrary counter names?
+- keep the client API simple
+- count usage safely under concurrency
+- preserve lightweight history for graphs and month-by-month reporting
+- prevent arbitrary counter names from being created by random callers
 
-So instead of raw events or one total counter row, we store **daily rollups** and keep a **registry of allowed counters**.
+That is why the database has:
+
+- a `counters` table as a registry of allowed counter names
+- a `counter_daily` table for daily rollup history
+- SQL functions for incrementing counters and reading summaries or time series
+
+## High-Level Flow
+
+```mermaid
+flowchart TD
+    Client[Script or website] -->|POST /count/dotfiles| API[FastAPI]
+    API -->|increment_counter| DB[(Supabase Postgres)]
+    DB --> Registry[counters table]
+    DB --> History[counter_daily table]
+    API -->|GET /count/dotfiles| DB
+    API -->|GET /count/dotfiles/series| DB
+```
+
+## Write Behavior
+
+When a client calls:
+
+```text
+POST /count/dotfiles
+```
+
+CounterHub does this:
+
+1. checks whether `dotfiles` exists in `public.counters`
+2. if it exists and is enabled, increments today's bucket in `public.counter_daily`
+3. if today's bucket does not exist yet, creates it with `count = 1`
+4. if the counter is not registered, returns `404`
+
+That means:
+
+- registered counter + same day: increment existing row
+- registered counter + new day: create a new daily row
+- unknown counter: reject the request
+
+## Data Shape
 
 Example registry:
 
@@ -37,7 +75,7 @@ portfolio
 homelab
 ```
 
-Example history:
+Example daily history:
 
 ```text
 counter_id | bucket_date | count
@@ -48,17 +86,22 @@ dotfiles   | 2026-01-28  | 6
 
 This gives us:
 
-- a very simple write API
-- much less storage than one row per hit
-- enough history for charts and time ranges
-- protection against arbitrary counter creation through the public endpoint
+- very small storage compared with raw per-hit events
+- enough history for charts
+- enough history for monthly or range-based reporting
+- safe concurrent increments
 
-## What The Initial Migration Creates
+## Migration Structure
 
 The current migration setup does two conceptual things:
 
 1. the initial schema migration creates the tables, index, SQL functions, and permissions
 2. a second migration explicitly registers `dotfiles` as the first allowed counter
+
+That separation is deliberate:
+
+- migration 1: structure
+- migration 2: allowed production-ready counter registration
 
 ## Table Design
 
@@ -115,7 +158,7 @@ create table public.counters (
 );
 ```
 
-This is the allow-list of valid counters. The table itself is created in the initial schema migration, and then counters are intentionally added through follow-up migrations or local seed data.
+This is the allow-list of valid counters.
 
 ### 2. Create the daily rollup table
 
@@ -194,61 +237,34 @@ That is what you use to:
 - sum a specific month
 - compare time ranges
 
-## Behavior Summary
+## Query Ideas
 
-Current behavior is:
+Examples of questions this design can answer:
 
-- `POST /count/dotfiles`
-  works if `dotfiles` is registered and enabled
-- `POST /count/whatever-random-name`
-  returns `404` and does not create anything
-- `GET /count/dotfiles`
-  returns the summary if registered
-- `GET /count/dotfiles/series`
-  returns the history if registered
+- current total for `dotfiles`
+- total in January 2026
+- increase between two months
+- simple line chart over time
 
-## Why This Is Better Than The Two Extremes
+The API endpoint for charts is:
 
-Compared with one total row only:
-
-- you gain history and charting
-- you can answer month-by-month questions
-
-Compared with one raw row per hit:
-
-- you use much less storage
-- the database stays quieter
-- the API stays simple
-
-Compared with unrestricted counter creation:
-
-- you prevent arbitrary names from being inserted
-- you keep the system cleaner and easier to manage
+```text
+GET /count/{counter_id}/series?start=YYYY-MM-DD&end=YYYY-MM-DD
+```
 
 ## Seed Data vs Migrations
 
 It is important to keep these separate.
 
-- migrations define the database structure and intentional production-ready counter registrations
-- `supabase/seed.sql` defines repeatable local development history data and extra local-only counters
+- migrations define the database structure and intentional production-ready registrations
+- `supabase/seed.sql` defines repeatable local development history data
 
 Structure belongs in migrations.
 Fake usage history belongs in the seed file.
 
-## When To Add A New Migration
-
-Right now, because the project is still very early, we kept one clean starting migration.
-
-Later, once this schema is actually in use, do not rewrite history casually.
-At that point:
-
-- keep this migration as the initial baseline
-- add a new migration for each schema change
-- use `supabase db reset` locally to verify the full history still rebuilds correctly
-
 ## In Short
 
-This first schema is intentionally simple:
+This design is intentionally small:
 
 - one `counters` registry table
 - one `counter_daily` history table

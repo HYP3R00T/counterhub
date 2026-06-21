@@ -8,26 +8,20 @@ This guide explains how to promote CounterHub from local development to hosted S
 
 The goal is to keep deployment simple and repeatable:
 
-1. verify locally
-2. push the database schema to Supabase
-3. configure environment variables in FastAPI Cloud
-4. deploy the FastAPI app
+- verify locally
+- deploy the database
+- configure backend environment variables
+- deploy the backend
 
-## What Gets Deployed Where
+## Prerequisites
 
-- Supabase hosts the database
-- FastAPI Cloud hosts the backend application
-- Git stores the migration files, code, and docs
-
-## Before You Deploy
-
-Make sure these are true first:
+Before you deploy, make sure these are true:
 
 - local development works
 - `supabase db reset` succeeds locally
-- your seed data is only for local use
 - your app runs locally with `uv run fastapi dev app/main.py`
 - tests and checks pass
+- your seed data is only for local use
 
 Recommended verification:
 
@@ -37,15 +31,17 @@ uv run ty check
 uv run pytest
 ```
 
-## 1. Log In To Supabase CLI
+## Database Deployment
+
+Supabase hosts the database.
+
+First, authenticate the CLI:
 
 ```bash
 supabase login
 ```
 
-This connects the CLI to your Supabase account.
-
-## 2. Link The Local Repo To Your Hosted Supabase Project
+Then link the local repo to your hosted Supabase project:
 
 ```bash
 supabase link --project-ref YOUR_PROJECT_REF
@@ -57,13 +53,11 @@ Notes:
 - the CLI may ask for the database password
 - once linked, commands like `supabase db push` know which remote project to target
 
-## 3. Push Database Migrations To Hosted Supabase
+To apply the local migration files to the hosted database, run:
 
 ```bash
 supabase db push
 ```
-
-This applies your local migration files to the hosted Supabase database.
 
 For this repo, that means it will:
 
@@ -76,16 +70,22 @@ Important:
 - `supabase/seed.sql` is for local development history samples and should not be treated as production usage data
 - this repo registers `dotfiles` in a dedicated follow-up migration, so `db reset --linked --no-seed` still leaves the remote database ready to accept real increments for that counter
 
-## 4. Set FastAPI Cloud Environment Variables
+If you need to wipe the remote database and rebuild it from local migrations without loading local seed data, use:
 
-CounterHub needs:
+```bash
+supabase db reset --linked --no-seed
+```
+
+## Backend Deployment
+
+FastAPI Cloud hosts the backend application.
+
+CounterHub needs these environment variables:
 
 - `SUPABASE_URL`
 - `SUPABASE_KEY`
 
-You can set them with the FastAPI Cloud CLI.
-
-Example:
+You can set them with the FastAPI Cloud CLI:
 
 ```bash
 fastapi cloud env set SUPABASE_URL "https://YOUR_PROJECT_REF.supabase.co"
@@ -94,19 +94,17 @@ fastapi cloud env set --secret SUPABASE_KEY "YOUR_SUPABASE_SERVICE_ROLE_KEY"
 
 Use a server-side key here, not a browser-exposed public key.
 
-## 5. Deploy To FastAPI Cloud
+Once the environment variables are set, deploy the backend:
 
 ```bash
 fastapi deploy
 ```
 
-FastAPI Cloud will upload the app, install dependencies, and deploy it.
-
-## Recommended Deployment Order
+## Recommended Order
 
 For this project, the safest order is usually:
 
-1. push database changes first
+1. deploy database changes first
 2. then deploy the FastAPI app
 
 Why:
@@ -116,7 +114,7 @@ Why:
 
 This matches FastAPI Cloud's guidance for gradual deployments: add database structure before deploying code that depends on it, and remove old structure only after the new code is fully deployed.
 
-## Typical Full Release Sequence
+## Full Release Sequence
 
 ```bash
 supabase login
@@ -127,7 +125,7 @@ fastapi cloud env set --secret SUPABASE_KEY "YOUR_SUPABASE_SERVICE_ROLE_KEY"
 fastapi deploy
 ```
 
-## After Deployment
+## Verification
 
 Check the app health endpoint:
 
@@ -147,7 +145,7 @@ Check that the summary reads back correctly:
 curl https://YOUR_FASTAPI_CLOUD_URL/count/dotfiles
 ```
 
-## Notes For Future Changes
+## Future Changes
 
 As long as the project is early, the workflow can stay simple.
 
