@@ -1,4 +1,5 @@
 import os
+from datetime import UTC, datetime
 from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException
@@ -16,6 +17,7 @@ def get_client() -> Client:
 class Counter(BaseModel):
     id: str
     count: int
+    updated_at: datetime
 
 
 def _row(data: list[Any]) -> dict[str, Any]:
@@ -37,16 +39,20 @@ def increment(counter_id: str) -> Counter:
     client = get_client()
     result = client.table("counters").select("*").eq("id", counter_id).execute()
 
-    if result.data:
-        row = _row(result.data)
-        new_count = int(row["count"]) + 1
-        updated = client.table("counters").update({"count": new_count}).eq("id", counter_id).execute()
-        row = _row(updated.data)
-    else:
-        inserted = client.table("counters").insert({"id": counter_id, "count": 1}).execute()
-        row = _row(inserted.data)
+    if not result.data:
+        raise HTTPException(status_code=404, detail="counter not found")
 
-    return Counter(id=str(row["id"]), count=int(row["count"]))
+    now = datetime.now(UTC).isoformat()
+    row = _row(result.data)
+    updated = (
+        client
+        .table("counters")
+        .update({"count": int(row["count"]) + 1, "updated_at": now})
+        .eq("id", counter_id)
+        .execute()
+    )
+    row = _row(updated.data)
+    return Counter(id=str(row["id"]), count=int(row["count"]), updated_at=row["updated_at"])
 
 
 @app.get("/counter/{counter_id}")
@@ -58,4 +64,4 @@ def get_counter(counter_id: str) -> Counter:
         raise HTTPException(status_code=404, detail="counter not found")
 
     row = _row(result.data)
-    return Counter(id=str(row["id"]), count=int(row["count"]))
+    return Counter(id=str(row["id"]), count=int(row["count"]), updated_at=row["updated_at"])
