@@ -46,3 +46,7 @@ description = "Start Supabase local instance"
 [tasks.db-down]
 run = "supabase stop --no-backup"
 description = "Stop Supabase local instance"
+
+[tasks.skills]
+run = "uvx library-skills"
+description = "Fetch official skills from the installed packages"
