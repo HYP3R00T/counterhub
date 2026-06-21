@@ -1,12 +1,21 @@
 [project]
 site_name = "counterhub"
-site_description = "Add your description here"
+site_description = "CounterHub documentation"
 repo_name = "HYP3R00T/counterhub"
 repo_url = "https://github.com/HYP3R00T/counterhub"
 site_author = "Rajesh Das"
 copyright = "Copyright &copy; 2026 Rajesh Das"
 
-nav = [{ Home = "index.md" }]
+nav = [
+  { Home = "index.md" },
+  { Workflows = [
+    { "Local Development" = "workflows/local-development.md" },
+    { Deployment = "workflows/deployment.md" },
+  ] },
+  { Database = [
+    { Schema = "database/schema.md" },
+  ] },
+]
 
 [project.theme]
 language = "en"
@@ -31,20 +40,17 @@ features = [
   "search.highlight",
 ]
 
-# Palette toggle for automatic mode
 [[project.theme.palette]]
 media = "(prefers-color-scheme)"
 toggle.icon = "lucide/sun-moon"
 toggle.name = "Switch to light mode"
 
-# Palette toggle for light mode
 [[project.theme.palette]]
 scheme = "default"
 media = "(prefers-color-scheme: light)"
 toggle.icon = "lucide/sun"
 toggle.name = "Switch to dark mode"
 
-# Palette toggle for dark mode
 [[project.theme.palette]]
 scheme = "slate"
 media = "(prefers-color-scheme: dark)"

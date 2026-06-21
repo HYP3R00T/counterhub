@@ -1,20 +1,21 @@
 # CounterHub
 
-CounterHub is a lightweight event-tracking and analytics service that gives static websites, scripts, and personal infrastructure a simple way to collect and expose usage metrics.
+CounterHub is a lightweight counter service for scripts, static websites, homelab services, and personal tools.
 
-Its job is to collect events, store them, and provide counters and simple analytics for your projects.
+Its job is simple: accept a request, increment a named counter, and let you read the current value and recent history later.
 
 ## Why It Exists
 
-Static websites, documentation sites, scripts, and lightweight tools can display information, but they cannot reliably remember things like:
+Some projects are static or lightweight. They do not need a full analytics stack.
+They just need to answer questions like:
 
-- how many times a script was executed
-- how many times a resume was downloaded
-- how many times a bootstrap process was run
-- whether a homelab service has checked in recently
-- basic usage metrics across projects
+- how many times was this script run?
+- how many times was this resume downloaded?
+- how many times was this bootstrap command used?
+- how many times did this service check in?
+- how did usage change over time?
 
-CounterHub solves that by acting as the middleman between clients and storage.
+CounterHub gives those projects one small backend endpoint they can call.
 
 ```text
 Client
@@ -27,120 +28,72 @@ Client
     Supabase
 ```
 
-## Core Idea
+## Current API
 
-Clients do not directly increment counters. They send events to CounterHub.
+```text
+GET  /
+POST /count/{counter_id}
+GET  /count/{counter_id}
+GET  /count/{counter_id}/series?start=YYYY-MM-DD&end=YYYY-MM-DD
+```
 
-Example event:
+Increment a counter:
+
+```bash
+curl -X POST http://127.0.0.1:8000/count/dotfiles
+```
+
+Read the overall summary:
+
+```bash
+curl http://127.0.0.1:8000/count/dotfiles
+```
+
+Read the daily series for a graph:
+
+```bash
+curl "http://127.0.0.1:8000/count/dotfiles/series?start=2026-01-01&end=2026-01-31"
+```
+
+Example summary response:
 
 ```json
 {
-  "project": "dotfiles",
-  "event": "install"
+  "counter_id": "dotfiles",
+  "total_count": 42,
+  "last_updated_at": "2026-06-21T12:34:56.000000+00:00",
+  "first_bucket_date": "2026-06-01",
+  "last_bucket_date": "2026-06-21"
 }
 ```
 
-CounterHub stores that event in Supabase.
-
-Later, when another project wants to display a metric such as:
-
-```text
-Dotfiles installs: 137
-```
-
-it can ask CounterHub for derived statistics:
-
-```http
-GET /projects/dotfiles/stats
-```
-
-CounterHub then calculates that result from the stored events.
-
-## Key Design Decision
-
-CounterHub stores **events**, not just counters.
-
-Instead of storing only a value like:
-
-```text
-dotfiles = 137
-```
-
-it stores an event history like:
-
-```text
-dotfiles install
-dotfiles install
-dotfiles install
-...
-```
-
-That keeps the system flexible and makes future analytics possible without redesigning the database.
-
-From the same event history, CounterHub can support questions like:
-
-- total installs
-- installs this month
-- last install time
-- unique machines
-- most active project
-- activity trends
-
-## Example Use Cases
-
-The initial use case is tracking dotfile bootstrap executions, but the platform is intentionally generic.
-
-Other projects could send events like:
+Example series response:
 
 ```json
 {
-  "project": "homelab",
-  "event": "heartbeat"
-}
-```
-
-or:
-
-```json
-{
-  "project": "portfolio",
-  "event": "resume_download"
-}
-```
-
-without changing the architecture.
-
-## API Direction
-
-The intended API shape is:
-
-```text
-POST /events
-GET  /projects/{project}/stats
-```
-
-A stats response might look like:
-
-```json
-{
-  "project": "dotfiles",
-  "total_events": 137,
-  "install": 137,
-  "last_event": "2026-06-21T12:34:56.000000+00:00"
+  "counter_id": "dotfiles",
+  "start_date": "2026-01-01",
+  "end_date": "2026-01-31",
+  "total_count": 17,
+  "points": [
+    {"bucket_date": "2026-01-01", "count": 4},
+    {"bucket_date": "2026-01-12", "count": 7},
+    {"bucket_date": "2026-01-28", "count": 6}
+  ]
 }
 ```
 
 ## Current Repository State
 
-The current repository is an early FastAPI and Supabase implementation. The app currently exposes a simple counter-oriented MVP while the broader product direction is event storage and derived analytics.
+The repository implements a deliberately small first version of CounterHub:
 
-Current endpoints in the codebase:
+- one daily rollup table in Supabase
+- one atomic SQL function for increments
+- one async FastAPI endpoint to increment a counter
+- one async FastAPI endpoint to read the overall summary
+- one async FastAPI endpoint to read daily history for charts
 
-- `GET /` returns service status and database reachability
-- `POST /counter/{counter_id}/increment` increments a known counter
-- `GET /counter/{counter_id}` returns the current value for a counter
-
-That makes the current service a stepping stone toward the event-based design described above.
+This keeps the client experience simple while still preserving time-based history without storing one row per hit.
 
 ## Stack
 
@@ -171,6 +124,8 @@ Required environment variables:
 
 - `SUPABASE_URL`
 - `SUPABASE_KEY`
+
+For backend deployment, `SUPABASE_KEY` should be a server-side key, not a browser-exposed public key.
 
 ## Quality Checks
 

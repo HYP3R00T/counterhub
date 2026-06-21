@@ -5,9 +5,9 @@ Instructions for coding agents working in this repository.
 ## Project overview
 
 - Repo: `HYP3R00T/counterhub`
-- Product: CounterHub is a lightweight backend service that collects events, stores them, and exposes counters and simple analytics for personal projects.
-- Primary use case: static websites, scripts, homelab services, and automation workflows send events to CounterHub so metrics can be derived later.
-- Core design: store **events**, not just counters, so the system can answer future questions without redesigning the data model.
+- Product: CounterHub is a lightweight backend service that increments named counters and exposes simple history for personal projects.
+- Primary use case: static websites, scripts, homelab services, and automation workflows call one endpoint to increase a counter.
+- Core design: keep the product deliberately small, with atomic increments, daily rollups, and simple reads instead of a broad analytics platform.
 - Stack: Python >= 3.13, FastAPI, Supabase, `uv`, `ruff`, `ty`, `pytest`, `zensical`.
 
 ## Product direction
@@ -18,25 +18,23 @@ CounterHub acts as the middle layer between lightweight clients and Supabase:
 Client -> CounterHub -> Supabase
 ```
 
-Clients send events such as:
-
-```json
-{
-  "project": "dotfiles",
-  "event": "install"
-}
-```
-
-CounterHub stores those events and later derives stats such as total installs, recent activity, last event time, or other project analytics.
-
-Target API direction:
+Clients call a simple endpoint such as:
 
 ```text
-POST /events
-GET  /projects/{project}/stats
+POST /count/dotfiles
 ```
 
-Important: the current codebase is still an early counter-oriented MVP. When editing docs or code, keep the distinction clear between the current implementation and the intended event-based architecture.
+CounterHub increments that named counter atomically, stores it in daily buckets, and lets clients read back the total and history later.
+
+Current API direction:
+
+```text
+POST /count/{counter_id}
+GET  /count/{counter_id}
+GET  /count/{counter_id}/series
+```
+
+Important: keep the product small unless a real need appears. Prefer daily rollups over raw event streams by default.
 
 ## Environment setup
 
@@ -87,7 +85,7 @@ Coverage threshold: **80%** (enforced in CI and `mise.toml` `test` task).
 ## Expectations
 
 - **Code:** typed, explicit Python; `ruff` is the formatting/lint source of truth; avoid new tools unless justified.
-- **Architecture:** prefer event-oriented designs over hard-coded counters when adding new product behavior.
+- **Architecture:** prefer the smallest counter-based design that solves the problem. Daily rollups are fine; raw per-hit event storage should require a clear need.
 - **Tests:** add or update tests for behavior changes; prefer focused unit tests over broad integration scaffolding.
 - **Docs:** update `README.md` and `docs/` if behavior or product direction changes; don't hand-edit `site/` (build artifact).
 - **Commits:** use conventional commits (`cz commit` if available); PRs should include a short summary of commands run.
@@ -116,7 +114,7 @@ Ponytail here means lazy, not negligent:
 ## Agent behavior
 
 - Prefer minimal diffs; don't refactor unrelated files.
-- Keep the implementation aligned with the product goal: event ingestion first, derived analytics second.
+- Keep the implementation aligned with the product goal: simple named counters with safe concurrent increments and lightweight daily history.
 - If tools are missing, run `mise install` and `uv sync` before trying workarounds.
 - Keep CI workflows and local guidance in sync when changing related behavior.
 - If a simpler native FastAPI or Supabase approach exists, prefer it over custom abstractions.

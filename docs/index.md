@@ -1,24 +1,35 @@
 ---
-icon: lucide/rocket
+icon: lucide/chart-column
 ---
 
-# Get started
+# CounterHub Docs
 
-Ship faster with a production-ready Python repository template built for consistency, quality, and contributor onboarding.
+CounterHub is a lightweight counter backend for scripts, static websites, homelab services, and personal tools.
 
-This template gives you a clean starting point with development environment setup, quality gates, testing defaults, and docs workflow already wired.
+This documentation is the long-term runbook for the project. Use it when you need to set up local development, remember the architecture, or revisit deployment steps later.
 
-## Why Teams Use This Template
+## What CounterHub Does
 
-- **Reliable setup from day one:** standardized local environments with Dev Containers, mise, and uv.
-- **Quality gates built in:** linting, formatting, type checks, and tests with coverage are ready immediately.
-- **Cleaner collaboration:** commit hooks and commit conventions catch issues before review.
-- **Docs included, not deferred:** setup, testing, and contribution docs are already structured.
-- **Local-to-CI consistency:** the commands contributors run locally match what CI enforces.
+CounterHub sits between lightweight clients and Supabase:
 
-## What You Can Do Immediately
+```text
+Client -> CounterHub -> Supabase
+```
 
-- **Bootstrap your repo:** create a new repository from this template and start in minutes.
-- **Run quality checks:** execute lint, format, type-check, and test commands without extra scaffolding.
-- **Onboard contributors:** share clear setup and contribution guidance with your team.
-- **Ship with confidence:** keep changes predictable with consistent local and CI workflows.
+Clients call a simple endpoint like:
+
+```text
+POST /count/dotfiles
+```
+
+CounterHub increments the named counter and stores the result in daily buckets in Supabase.
+
+## Docs Map
+
+- [Local development workflow](workflows/local-development.md): set up Supabase locally, run the FastAPI app, create migrations, reset the database, and use seed data.
+- [Deployment workflow](workflows/deployment.md): push schema changes to Supabase, configure FastAPI Cloud environment variables, and deploy the app.
+- [Database schema](database/schema.md): understand the initial migration, the daily rollup table, permissions, and the SQL functions.
+
+## Current State
+
+The current codebase stores daily counter rollups in Supabase and exposes async FastAPI endpoints to increment counters, read summaries, and fetch simple time-series data.
