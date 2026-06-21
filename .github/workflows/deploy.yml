@@ -8,6 +8,7 @@ on:
       - "pyproject.toml"
       - "requirements.txt"
       - "uv.lock"
+  workflow_dispatch:
 
 jobs:
   deploy:
