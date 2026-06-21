@@ -7,7 +7,7 @@ Instructions for coding agents working in this repository.
 - Repo: `HYP3R00T/counterhub`
 - Product: CounterHub is a lightweight backend service that increments named counters and exposes simple history for personal projects.
 - Primary use case: static websites, scripts, homelab services, and automation workflows call one endpoint to increase a counter.
-- Core design: keep the product deliberately small, with atomic increments, daily rollups, and simple reads instead of a broad analytics platform.
+- Core design: keep the product deliberately small, with registered counters, atomic increments, daily rollups, and simple reads instead of a broad analytics platform.
 - Stack: Python >= 3.13, FastAPI, Supabase, `uv`, `ruff`, `ty`, `pytest`, `zensical`.
 
 ## Product direction
@@ -24,7 +24,7 @@ Clients call a simple endpoint such as:
 POST /count/dotfiles
 ```
 
-CounterHub increments that named counter atomically, stores it in daily buckets, and lets clients read back the total and history later.
+CounterHub increments registered named counters atomically, stores them in daily buckets, and lets clients read back totals and history later.
 
 Current API direction:
 

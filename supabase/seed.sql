@@ -1,7 +1,15 @@
 -- Local development seed data for CounterHub.
 --
--- This gives the local database some realistic counter history so you can
--- immediately test totals and simple time-series queries after `supabase db reset`.
+-- This file registers a few allowed counters and gives them some realistic
+-- daily history for local testing.
+
+insert into public.counters (id, description)
+values
+    ('dotfiles', 'Dotfiles bootstrap and setup usage'),
+    ('portfolio', 'Portfolio actions such as resume downloads'),
+    ('homelab', 'Homelab automation and service usage')
+on conflict (id) do update set
+    description = excluded.description;
 
 insert into public.counter_daily (counter_id, bucket_date, count, updated_at)
 values

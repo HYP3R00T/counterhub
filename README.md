@@ -2,7 +2,7 @@
 
 CounterHub is a lightweight counter service for scripts, static websites, homelab services, and personal tools.
 
-Its job is simple: accept a request, increment a named counter, and let you read the current value and recent history later.
+Its job is simple: accept a request for a registered counter, increment it, and let you read the current value and recent history later.
 
 ## Why It Exists
 
@@ -93,7 +93,7 @@ The repository implements a deliberately small first version of CounterHub:
 - one async FastAPI endpoint to read the overall summary
 - one async FastAPI endpoint to read daily history for charts
 
-This keeps the client experience simple while still preserving time-based history without storing one row per hit.
+This keeps the client experience simple while still preserving time-based history without storing one row per hit. Only registered counters can be incremented.
 
 ## Stack
 

@@ -42,7 +42,12 @@ class StubClient:
 
     def rpc(self, fn: str, params: dict[str, Any]) -> RpcRequest:
         self.rpc_calls.append((fn, params))
-        return RpcRequest(self.rpc_responses.get(fn, []))
+        response = self.rpc_responses.get(fn, [])
+        if isinstance(response, list):
+            data = response.pop(0) if response and isinstance(response[0], list) else response
+        else:
+            data = response
+        return RpcRequest(data)
 
     def table(self, _name: str) -> TableRequest:
         return self.table_request
@@ -80,6 +85,16 @@ def test_increment_counter_returns_totals(monkeypatch) -> None:
     assert client.rpc_calls == [("increment_counter", {"counter_name": "dotfiles"})]
 
 
+def test_increment_counter_returns_404_when_unregistered(monkeypatch) -> None:
+    client = StubClient(rpc_responses={"increment_counter": []})
+    monkeypatch.setattr(main_module, "get_client", lambda: stub_get_client_factory(client))
+
+    response = TestClient(app).post("/count/unknown")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "counter not found"}
+
+
 def test_get_counter_returns_summary(monkeypatch) -> None:
     updated_at = datetime(2026, 6, 21, tzinfo=UTC).isoformat()
     client = StubClient(
@@ -109,13 +124,34 @@ def test_get_counter_returns_summary(monkeypatch) -> None:
     }
 
 
+def test_get_counter_returns_404_when_unregistered(monkeypatch) -> None:
+    client = StubClient(rpc_responses={"get_counter_summary": []})
+    monkeypatch.setattr(main_module, "get_client", lambda: stub_get_client_factory(client))
+
+    response = TestClient(app).get("/count/unknown")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "counter not found"}
+
+
 def test_get_counter_series_returns_points_and_total(monkeypatch) -> None:
     client = StubClient(
         rpc_responses={
+            "get_counter_summary": [
+                [
+                    {
+                        "counter_id": "dotfiles",
+                        "total_count": 12,
+                        "last_updated_at": None,
+                        "first_bucket_date": date(2026, 1, 1).isoformat(),
+                        "last_bucket_date": date(2026, 1, 31).isoformat(),
+                    }
+                ]
+            ],
             "get_counter_series": [
                 {"bucket_date": date(2026, 1, 1).isoformat(), "count": 4},
                 {"bucket_date": date(2026, 1, 2).isoformat(), "count": 6},
-            ]
+            ],
         }
     )
     monkeypatch.setattr(main_module, "get_client", lambda: stub_get_client_factory(client))
@@ -133,3 +169,14 @@ def test_get_counter_series_returns_points_and_total(monkeypatch) -> None:
             {"bucket_date": "2026-01-02", "count": 6},
         ],
     }
+    assert client.rpc_calls == [
+        ("get_counter_summary", {"counter_name": "dotfiles"}),
+        (
+            "get_counter_series",
+            {
+                "counter_name": "dotfiles",
+                "start_date": date(2026, 1, 1),
+                "end_date": date(2026, 1, 31),
+            },
+        ),
+    ]

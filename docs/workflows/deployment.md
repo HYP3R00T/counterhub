@@ -65,15 +65,16 @@ supabase db push
 
 This applies your local migration files to the hosted Supabase database.
 
-For this repo, that means it will create the `counter_daily` table and SQL functions from:
+For this repo, that means it will:
 
-- `supabase/migrations/20260621205825_initial_counter_daily_schema.sql`
+- create the daily-rollup schema from `supabase/migrations/20260621205825_initial_counter_daily_schema.sql`
+- register `dotfiles` as the first allowed counter from `supabase/migrations/20260621214918_register_dotfiles_counter.sql`
 
 Important:
 
 - `supabase db push` is for schema changes
-- `supabase/seed.sql` is for local development and should not be treated as production data
-- if you later want production starter data, add that intentionally instead of relying on local seed files
+- `supabase/seed.sql` is for local development history samples and should not be treated as production usage data
+- this repo registers `dotfiles` in a dedicated follow-up migration, so `db reset --linked --no-seed` still leaves the remote database ready to accept real increments for that counter
 
 ## 4. Set FastAPI Cloud Environment Variables
 

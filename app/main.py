@@ -67,7 +67,7 @@ def _rows(data: Any) -> list[dict[str, Any]]:
 async def root() -> dict[str, str]:
     try:
         client = await get_client()
-        await client.table("counter_daily").select("counter_id").limit(1).execute()
+        await client.table("counters").select("id").limit(1).execute()
         db = "ok"
     except Exception:
         db = "unreachable"
@@ -81,7 +81,7 @@ async def increment_counter(counter_id: CounterPath) -> CounterIncrementResult:
     row = _first_row(result.data)
 
     if row is None:
-        raise HTTPException(status_code=500, detail="counter was not incremented")
+        raise HTTPException(status_code=404, detail="counter not found")
 
     return CounterIncrementResult.model_validate(row)
 
@@ -93,7 +93,7 @@ async def get_counter(counter_id: CounterPath) -> CounterSummary:
     row = _first_row(result.data)
 
     if row is None:
-        raise HTTPException(status_code=500, detail="counter summary unavailable")
+        raise HTTPException(status_code=404, detail="counter not found")
 
     return CounterSummary.model_validate(row)
 
@@ -105,6 +105,12 @@ async def get_counter_series(
     end: DateQuery = None,
 ) -> CounterSeries:
     client = await get_client()
+    summary_result = await client.rpc("get_counter_summary", {"counter_name": counter_id}).execute()
+    summary_row = _first_row(summary_result.data)
+
+    if summary_row is None:
+        raise HTTPException(status_code=404, detail="counter not found")
+
     result = await client.rpc(
         "get_counter_series",
         {"counter_name": counter_id, "start_date": start, "end_date": end},

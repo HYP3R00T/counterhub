@@ -22,7 +22,7 @@ Clients call a simple endpoint like:
 POST /count/dotfiles
 ```
 
-CounterHub increments the named counter and stores the result in daily buckets in Supabase.
+CounterHub increments a registered named counter and stores the result in daily buckets in Supabase.
 
 ## Docs Map
 
