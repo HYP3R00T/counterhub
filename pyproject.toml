@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "A simple event tracking service that collects, stores, and exposes usage metrics for scripts, websites, and personal projects."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = ["fastapi[standard]>=0.137.1", "supabase>=2.31.0"]
+dependencies = ["fastapi[standard]>=0.138.0", "supabase>=2.31.0"]
 
 [dependency-groups]
 dev = [
@@ -14,5 +14,5 @@ dev = [
   "ruff>=0.15.12",
   "sqruff>=0.38.0",
   "ty>=0.0.34",
-  "zensical>=0.0.39",
+  "zensical>=0.0.46",
 ]
